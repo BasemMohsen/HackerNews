@@ -1,4 +1,5 @@
 ﻿using HackerNews.ApiClient.Interfaces;
+using HackerNews.Services.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,11 @@ namespace HackerNews.ApiClient.Implementation
         public async Task<IEnumerable<int>> GetBestStoryIdsAsync()
         {
             return await _httpClient.GetFromJsonAsync<List<int>>("https://hacker-news.firebaseio.com/v0/beststories.json");
+        }
+
+        public async Task<Story> GetStoryByIdAsync(int id)
+        {
+            return await _httpClient.GetFromJsonAsync<Story>($"https://hacker-news.firebaseio.com/v0/item/{id}.json");
         }
     }
 }

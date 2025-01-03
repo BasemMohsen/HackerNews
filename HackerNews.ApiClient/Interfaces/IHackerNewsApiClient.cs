@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HackerNews.Services.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,6 @@ namespace HackerNews.ApiClient.Interfaces
     public interface IHackerNewsApiClient
     {
         Task<IEnumerable<int>> GetBestStoryIdsAsync();
-        //Task<Story> GetStoryByIdAsync(int id);
+        Task<Story> GetStoryByIdAsync(int id);
     }
 }

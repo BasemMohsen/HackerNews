@@ -1,4 +1,6 @@
-﻿using System;
+﻿using HackerNews.Services.Dto;
+using HackerNews.Services.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +10,6 @@ namespace HackerNews.Services.Interfaces
 {
     public interface IStoryService
     {
-
+       Task<List<StoryDto>> GetTopStoriesAsync(int count);
     }
 }
