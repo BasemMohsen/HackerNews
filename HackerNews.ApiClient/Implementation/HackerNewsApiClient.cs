@@ -1,30 +1,29 @@
-﻿using HackerNews.ApiClient.Interfaces;
-using HackerNews.Services.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using HackerNews.ApiClient.Configuration;
+using HackerNews.ApiClient.Interfaces;
+using HackerNews.ApiClient.Models;
+using Microsoft.Extensions.Options;
 using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HackerNews.ApiClient.Implementation
 {
     public class HackerNewsApiClient : IHackerNewsApiClient
     {
         private readonly HttpClient _httpClient;
+        private readonly HackerNewsApiConfig _config;
 
-        public HackerNewsApiClient(HttpClient httpClient)
+        public HackerNewsApiClient(HttpClient httpClient, IOptions<HackerNewsApiConfig> config)
         {
             _httpClient = httpClient;
+            _config = config.Value;
         }
         public async Task<IEnumerable<int>> GetBestStoryIdsAsync()
         {
-            return await _httpClient.GetFromJsonAsync<List<int>>("https://hacker-news.firebaseio.com/v0/beststories.json");
+            return await _httpClient.GetFromJsonAsync<List<int>>(_config.BestStoriesUrl);
         }
 
         public async Task<Story> GetStoryByIdAsync(int id)
         {
-            return await _httpClient.GetFromJsonAsync<Story>($"https://hacker-news.firebaseio.com/v0/item/{id}.json");
+            return await _httpClient.GetFromJsonAsync<Story>(string.Format(_config.StoryDetailsUrl, id));
         }
     }
 }

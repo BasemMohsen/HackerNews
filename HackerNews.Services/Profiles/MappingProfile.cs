@@ -1,17 +1,12 @@
 ﻿using AutoMapper;
 using HackerNews.Services.Dto;
-using HackerNews.Services.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using HackerNews.ApiClient.Models;
 
 namespace HackerNews.Services.Profiles
 {
-    public class StoryProfile : Profile
+    public class MappingProfile : Profile
     {
-        public StoryProfile()
+        public MappingProfile()
         {
             CreateMap<Story, StoryDto>()
                 .ForMember(dest => dest.Time, opt => opt.MapFrom(src => DateTimeOffset.FromUnixTimeSeconds(src.Time).ToString("o")));

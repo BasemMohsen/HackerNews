@@ -1,6 +1,7 @@
-using AutoMapper;
+using HackerNews.ApiClient.Configuration;
 using HackerNews.ApiClient.Implementation;
 using HackerNews.ApiClient.Interfaces;
+using HackerNews.Services.Configurations;
 using HackerNews.Services.Interfaces;
 using HackerNews.Services.Profiles;
 using HackerNews.Services.Services;
@@ -18,7 +19,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddAutoMapper(typeof(StoryProfile));
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.Configure<CacheConfig>(builder.Configuration.GetSection("CacheConfig"));
+builder.Services.Configure<HackerNewsApiConfig>(builder.Configuration.GetSection("HackerNewsApiConfig"));
 
 var app = builder.Build();
 
@@ -30,8 +33,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 

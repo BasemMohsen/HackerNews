@@ -2,11 +2,11 @@
 using HackerNews.ApiClient.Interfaces;
 using HackerNews.Services.Dto;
 using HackerNews.Services.Interfaces;
-using HackerNews.Services.Models;
+using HackerNews.ApiClient.Models;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using System.Net.Http;
+using HackerNews.Services.Configurations;
+using Microsoft.Extensions.Options;
 
 namespace HackerNews.Services.Services
 {
@@ -16,18 +16,15 @@ namespace HackerNews.Services.Services
         private readonly IMapper _mapper;
         private readonly IMemoryCache _cache;
         private readonly ILogger<StoryService> _logger;
+        private readonly CacheConfig _cacheConfig;
 
-        private const string STORY_IDS_CACHE_KEY = "StoryIds";
-        private const string STORY_CACHE_KEY_PREFIX = "Story_";
-        private static readonly TimeSpan STORY_IDS_CACHE_DURATION = TimeSpan.FromMinutes(5);
-        private static readonly TimeSpan STORY_CACHE_DURATION = TimeSpan.FromMinutes(15);
-
-        public StoryService(IHackerNewsApiClient apiClient, IMapper mapper, IMemoryCache cache, ILogger<StoryService> logger)
+        public StoryService(IHackerNewsApiClient apiClient, IMapper mapper, IMemoryCache cache, ILogger<StoryService> logger, IOptions<CacheConfig> cacheConfig)
         {
             _apiClient = apiClient;
             _mapper = mapper;
             _cache = cache;
             _logger = logger;
+            _cacheConfig = cacheConfig.Value;
         }
 
         public async Task<List<StoryDto>> GetTopStoriesAsync(int count)
@@ -66,7 +63,7 @@ namespace HackerNews.Services.Services
 
         private async Task<IEnumerable<int>> GetStoryIdsFromCacheOrApiAsync()
         {
-            if (_cache.TryGetValue(STORY_IDS_CACHE_KEY, out IEnumerable<int> cachedIds))
+            if (_cache.TryGetValue(_cacheConfig.StoryIdsKey, out IEnumerable<int> cachedIds))
             {
                 _logger.LogInformation("Retrieved story IDs from cache");
                 return cachedIds;
@@ -75,10 +72,10 @@ namespace HackerNews.Services.Services
             var storyIds = await _apiClient.GetBestStoryIdsAsync();
 
             var cacheEntryOptions = new MemoryCacheEntryOptions()
-                .SetAbsoluteExpiration(STORY_IDS_CACHE_DURATION)
+                .SetAbsoluteExpiration(TimeSpan.FromMinutes(5))
                 .SetPriority(CacheItemPriority.High);
 
-            _cache.Set(STORY_IDS_CACHE_KEY, storyIds, cacheEntryOptions);
+            _cache.Set(_cacheConfig.StoryIdsKey, storyIds, cacheEntryOptions);
             _logger.LogInformation("Stored story IDs in cache");
 
             return storyIds;
@@ -86,7 +83,7 @@ namespace HackerNews.Services.Services
 
         private async Task<Story> GetStoryFromCacheOrApiAsync(int storyId)
         {
-            var cacheKey = $"{STORY_CACHE_KEY_PREFIX}{storyId}";
+            var cacheKey = $"{_cacheConfig.StoryKeyPrefix}{storyId}";
 
             if (_cache.TryGetValue(cacheKey, out Story cachedStory))
             {
@@ -101,7 +98,7 @@ namespace HackerNews.Services.Services
                 if (story != null)
                 {
                     var cacheEntryOptions = new MemoryCacheEntryOptions()
-                        .SetAbsoluteExpiration(STORY_CACHE_DURATION)
+                        .SetAbsoluteExpiration(TimeSpan.FromMinutes(15))
                         .SetPriority(CacheItemPriority.Normal);
 
                     _cache.Set(cacheKey, story, cacheEntryOptions);
