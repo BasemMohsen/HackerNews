@@ -1,0 +1,63 @@
+trigger: none  # Runs manually
+
+pool:
+  vmImage: 'windows-latest'  # Uses a hosted Windows VM for build
+
+variables:
+  buildConfiguration: 'Release'
+  solution: '**/*.sln'
+  projectPath: '**/HackerNews.WebApi/HackerNews.WebApi.csproj'
+  vmAddress: '172.190.51.62'  # Replace with your VM IP
+  vmUser: 'admin_1' # Replace with VM username
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Install .NET SDK'
+  inputs:
+    packageType: 'sdk'
+    version: '6.x'  # Adjust based on your .NET version
+    installationPath: $(Agent.ToolsDirectory)/dotnet
+
+- task: NuGetCommand@2
+  displayName: 'Restore NuGet Packages'
+  inputs:
+    restoreSolution: '$(solution)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Build the project'
+  inputs:
+    command: 'build'
+    projects: '$(projectPath)'
+    arguments: '--configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish the API'
+  inputs:
+    command: 'publish'
+    publishWebProjects: true
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: false
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Save build artifacts'
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'drop'
+
+- task: CopyFilesOverSSH@0
+  displayName: 'Copy files to Azure VM'
+  inputs:
+    sshEndpoint: 'my-vm-connection'  # Name of the service connection
+    sourceFolder: '$(Build.ArtifactStagingDirectory)'
+    contents: '**'
+    targetFolder: 'C:\inetpub\wwwroot\HackerNews'  # Adjust based on your VM setup
+    cleanTargetFolder: true
+    readyTimeout: '20000'
+
+- task: SSH@0
+  displayName: 'Restart IIS on VM'
+  inputs:
+    sshEndpoint: 'my-vm-connection'
+    runOptions: 'inline'
+    inline: |
+      iisreset /restart
